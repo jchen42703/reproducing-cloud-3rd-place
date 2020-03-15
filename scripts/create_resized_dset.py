@@ -1,4 +1,4 @@
-from clouds import Preprocessor
+from clouds.preprocess import Preprocessor
 from clouds.experiments import setup_train_and_sub_df
 
 def main(config):
