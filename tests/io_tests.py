@@ -188,12 +188,14 @@ class PreprocessorTests(unittest.TestCase):
             arr = np.load(fpath)
             self.assertEqual(arr.shape, (384, 576, 3))
             self.assertEqual(np.unique(arr).size, 256)
+            self.assertEqual(arr.dtype, np.uint8)
 
         mask_arr_fpaths = glob("masks_576/*.npy")
         for fpath in mask_arr_fpaths:
-            arr = np.load(fpath)
-            self.assertEqual(arr.shape, (384, 576, 4))
-            self.assertEqual(np.unique(arr).size, 2)
+            mask = np.load(fpath)
+            self.assertEqual(mask.shape, (384, 576, 4))
+            self.assertEqual(np.unique(mask).size, 2)
+            self.assertEqual(mask.dtype, np.uint8)
 
 
 def rle2mask_3rd_place(rle, height=256, width=1600, fill_value=1):
