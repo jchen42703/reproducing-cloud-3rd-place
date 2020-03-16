@@ -1,5 +1,7 @@
+import pandas as pd
+
 from clouds.preprocess import Preprocessor
-from clouds.experiments import setup_train_and_sub_df
+
 
 def main(config):
     paths_params = config["paths_params"]
@@ -8,16 +10,14 @@ def main(config):
         "test_dir": paths_params["test_dir"],
         "train_out": paths_params["train_out"],
         "test_out": paths_params["test_out"],
-        "mask_out": paths_params["mask_out"],
+        "masks_out": paths_params["masks_out"],
     }
-    train, sub, _ = setup_train_and_sub_df(paths_params["train_csv_path"],
-                                           paths_params["sample_sub_csv_path"])
-    preprocessor = Preprocessor(train, paths_dict, tuple(config["out_shape_cv2"]),
-                                config["file_type"])
-    if config["process_train_test"]:
-        preprocessor.execute_train_test()
-    if config["process_masks"]:
-        preprocessor.execute_masks()
+
+    train = pd.read_csv(paths_params["train_csv_path"])
+    preprocessor = Preprocessor(train, paths_dict,
+                                tuple(config["out_shape_cv2"]))
+    preprocessor.execute_all()
+
 
 if __name__ == "__main__":
     import yaml
