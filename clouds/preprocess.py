@@ -4,12 +4,9 @@ from tqdm import tqdm
 from pathlib import Path
 from glob import glob
 
-import zipfile
-import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
 
-from clouds.io.utils import rle_decode, make_mask
+from clouds.io.utils import make_mask_single
 
 COLAB_PATHS_DICT = {
     "train_dir": "./train_images/",
@@ -19,15 +16,34 @@ COLAB_PATHS_DICT = {
     "mask_out": "masks640.zip",
 }
 
+
 class Preprocessor(object):
+    """Preprocessor class.
+
+    Attributes:
+        df: dataframe with cols ["Image_Label", "EncodedPixels"];
+            the first dataframe from running `setup_train_and_sub_df(...)`
+        train_dir (str / None):
+        test_dir (str / None):
+        train_out (str / None):
+        test_out (str / None):
+        mask_out (str / None):
+            Leave as None, if not using a specific route.
+        out_shape_cv2 (tuple): (w, h); reverse of numpy shaping (how
+            cv2 handles its input sizing)
+        train_fpaths (List[str]):
+        test_fpaths (List[str]):
+
+    """
     def __init__(self, df, paths_dict=COLAB_PATHS_DICT,
-                 out_shape_cv2=(640, 320), file_type=".jpg"):
+                 out_shape_cv2=(640, 320)):
         """
-        Attributes:
+        
+        Args:
             df: dataframe with cols ["Image_Label", "EncodedPixels"];
                 the first dataframe from running `setup_train_and_sub_df(...)`
-            paths_dict (dict): for all of the paths to the input and output dirs
-                and files.
+            paths_dict (dict): for all of the paths to the input and output
+                directories and files.
                 Keys:
                 - train_dir
                 - test_dir
@@ -37,7 +53,7 @@ class Preprocessor(object):
                 Leave as None, if not using a specific route.
             out_shape_cv2 (tuple): (w, h); reverse of numpy shaping (how
                 cv2 handles its input sizing)
-            file_type (str): either '.jpg' or '.png'
+
         """
         self.df = df
         # parsing the paths_dict dictionary
@@ -49,6 +65,7 @@ class Preprocessor(object):
         # setting actual values from the dict
         for key in paths_dict.keys():
             setattr(self, key, paths_dict[key])
+
         # Gathering the file path lists
         if self.train_dir is not None:
             assert os.path.isdir(self.train_dir), \
@@ -65,77 +82,114 @@ class Preprocessor(object):
             print(f"{len(self.test_fpaths)} test images")
 
         self.out_shape_cv2 = out_shape_cv2
-        self.file_type = file_type
 
-    def execute_images(self, zip_path, img_fpaths):
-        """
-        Resizes input and saves the resulting images to the desired file format
-        in a .zip file.
-        """
-        with zipfile.ZipFile(zip_path, "w") as arch:
-            for fname in tqdm(img_fpaths, total=len(img_fpaths)):
-                convert_images(fname, arch, self.file_type,
-                               out_shape=self.out_shape_cv2)
+    def execute_images(self, out_dir, img_fpaths):
+        """Preprocesses masks and saves them in .npy files.
 
-    def execute_train_test(self):
+        Creates the masks from rles in the provided dataframe, resizes them,
+        and saves them as numpy arrays.
+
+        Args:
+            out_dir (str): Path to the output directory.
+                This will generally be one of the attributes created from
+                `paths_dict`.
+            img_fpaths (List[str]): List of all the image paths to read from
+                This is generally done through glob.glob().
+
+        Returns:
+            None
+
         """
-        Runs self.execute_images for the training/testing images
+        for img_fpath in tqdm(img_fpaths, total=len(img_fpaths)):
+            img = read_and_resize_img(img_fpath,
+                                      out_shape_cv2=self.out_shape_cv2)
+            save_path = os.path.join(out_dir, f"{Path(img_fpath).stem}.npy")
+            np.save(save_path, img)
+
+    def execute_masks(self):
+        """Creates and resizes the masks, which are saved in .npy files.
+
+        Creates the masks from rles in the provided dataframe, resizes them,
+        and saves them as numpy arrays.
+
         """
-        if self.train_out is not None:
+        all_img_ids = self.df["Image_Label"].apply(lambda x: x.split("_")[0])
+        all_img_ids = all_img_ids.drop_duplicates().values
+
+        for img_name in tqdm(all_img_ids):
+            mask = make_mask(self.df, img_name, shape=(1400, 2100),
+                             out_shape_cv2=self.out_shape_cv2, num_classes=4)
+            save_path = os.path.join(self.mask_out,
+                                     f"{Path(img_name).stem}.npy")
+            np.save(save_path, mask)
+
+    def execute_all(self):
+        """General method for preprocessing everything.
+
+        Runs self.execute_images for the training/testing images and
+        self.execute_masks for the masks. If a directory is not specified,
+        it will be skipped.
+
+        """
+        if self.train_out is not None and self.train_dir is not None:
+            print("\nPreprocessing training images...")
             assert self.train_fpaths is not None, \
                 "Make sure that train_dir is specified."
             self.execute_images(self.train_out, self.train_fpaths)
-        if self.test_out is not None:
+
+        if self.test_out is not None and self.test_dir is not None:
+            print("\nPreprocessing test images...")
             assert self.test_fpaths is not None, \
                 "Make sure that test_dir is specified."
             self.execute_images(self.test_out, self.test_fpaths)
 
-    def execute_masks(self):
-        """
-        Creates the masks from rles in the provided dataframe and saves them
-        in the desired file format inside of a .zip file.
-        """
-        all_img_ids = self.df["Image_Label"].apply(lambda x: x.split("_")[0]).drop_duplicates().values
-        # print(f"{len(all_img_ids)}")
+        if self.mask_out is not None:
+            print("\nPreprocessing masks...")
+            self.execute_masks()
 
-        with zipfile.ZipFile(self.mask_out, "w") as arch:
-            for image_name in tqdm(all_img_ids):
-                for label in ["Fish", "Flower", "Gravel", "Sugar"]:
-                    mask = make_mask_single(self.df, label, image_name,
-                                            shape=(1400, 2100))*255
-                    mask = cv2.resize(mask, self.out_shape_cv2,
-                                      interpolation=cv2.INTER_NEAREST)
-                    output = cv2.imencode(self.file_type, mask)[1]
-                    name = f"{label}{Path(image_name).stem}{self.file_type}"
-                    arch.writestr(name, output)
 
-def make_mask_single(df: pd.DataFrame, label: str, image_name: str,
-                     shape: tuple=(1400, 2100)):
-    """
-    Create mask based on df, image name and shape.
+def read_and_resize_img(img_fpath, out_shape_cv2=(640, 320)):
+    """Reads an image and resizes it.
 
     Args:
-        df: dataframe with cols ["Image_Label", "EncodedPixels"]
+        img_fpath (str): path to an image
+            i.e. /content/00b81e1.jpg
+        out_shape_cv2 (Tuple[int]): shape to resize to without channels and in
+        cv2 format.
+
     Returns:
-        mask: numpy array with the user-specified shape
+        img (np.ndarray): resized array
+
     """
-    assert label in ["Fish", "Flower", "Gravel", "Sugar"]
-    image_label = f"{image_name}_{label}"
-    encoded = df.loc[df["Image_Label"] == image_label, "EncodedPixels"].values
-    # handling NaNs and longer rles
-    encoded = encoded[0] if len(encoded) == 1 else encoded
-    mask = np.zeros((shape[0], shape[1]), dtype=np.float32)
-    if encoded is not np.nan:
-       mask = rle_decode(encoded)
+    img = np.array(cv2.imread(img_fpath))
+    img = cv2.resize(img, out_shape_cv2)
+    return img
+
+
+def make_mask(df, img_name, shape=(1400, 2100), out_shape_cv2=(576, 384),
+              num_classes=4):
+    """Creates masks from rles, resizes them, and combines them into an array.
+
+    Args:
+        df (pd.DataFrame): dataframe from train.csv
+        img_name (str): image name (without the class)
+            i.e. 00b81e1.jpg
+        shape (Tuple[int]): initial shape of the mask without channels (h, w)
+            This is the shape that the mask is when it is read from an RLE.
+        out_shape_cv2 (Tuple[int]): shape to resize to without channels and in
+            cv2 format.
+        num_classes (int): number of classes
+
+    Returns:
+        mask (np.ndarray): binary array with type int and shape:
+            (`shape`, num_classes)
+
+    """
+    mask = np.zeros(shape + (num_classes,))
+    for label_idx, label in enumerate(["Fish", "Flower", "Gravel", "Sugar"]):
+        mask = make_mask_single(df, label, img_name,
+                                shape=shape)
+        # 3rd place interpolates with bilinear and then thresholds
+        resized = (cv2.resize(mask, out_shape_cv2) > 0).astype(int)
+        mask[:, :, label_idx] = resized
     return mask
-
-def convert_images(filename, arch_out, file_type, out_shape=(640, 320)):
-    """
-    Reads an image and converts it to a desired file format
-    """
-    img = np.array(cv2.imread(filename))
-
-    img = cv2.resize(img, out_shape)
-    output = cv2.imencode(file_type, img)[1]
-    name = f"{Path(filename).stem}{file_type}"
-    arch_out.writestr(name, output)
