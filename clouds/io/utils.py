@@ -1,21 +1,11 @@
 import cv2
 import os
 import numpy as np
-import matplotlib.pyplot as plt
 import pandas as pd
 import torch
 
-def get_img(x, folder: str="train_images"):
-    """
-    Return image based on image name and folder.
-    """
-    data_folder = f"{path}/{folder}"
-    image_path = os.path.join(data_folder, x)
-    img = cv2.imread(image_path)
-    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-    return img
 
-def rle_decode(mask_rle: str="", shape: tuple=(1400, 2100)):
+def rle_decode(mask_rle: str = "", shape: tuple = (1400, 2100)):
     """
     Decode rle encoded mask.
 
@@ -33,8 +23,9 @@ def rle_decode(mask_rle: str="", shape: tuple=(1400, 2100)):
         img[lo:hi] = 1
     return img.reshape(shape, order="F")
 
-def make_mask(df: pd.DataFrame, image_name: str="img.jpg",
-              shape: tuple=(1400, 2100)):
+
+def make_mask(df: pd.DataFrame, image_name: str = "img.jpg",
+              shape: tuple = (1400, 2100)):
     """
     Create mask based on df, image name and shape.
     """
@@ -45,11 +36,11 @@ def make_mask(df: pd.DataFrame, image_name: str="img.jpg",
         if label is not np.nan:
             mask = rle_decode(label)
             masks[:, :, idx] = mask
-
     return masks
 
+
 def make_mask_single(df: pd.DataFrame, label: str, image_name: str,
-                     shape: tuple=(1400, 2100)):
+                     shape: tuple = (1400, 2100)):
     """
     Create mask based on df, image name and shape.
 
@@ -65,19 +56,21 @@ def make_mask_single(df: pd.DataFrame, label: str, image_name: str,
     encoded = encoded[0] if len(encoded) == 1 else encoded
     mask = np.zeros((shape[0], shape[1]), dtype=np.float32)
     if encoded is not np.nan:
-       mask = rle_decode(encoded)
+        mask = rle_decode(encoded, shape=shape)
     return mask
 
-def make_mask_resized_dset(df: pd.DataFrame, image_name: str="img.jpg",
-                           masks_dir: str="./masks",
-                           shape: tuple=(320, 640)):
+
+def make_mask_resized_dset(df: pd.DataFrame, image_name: str = "img.jpg",
+                           masks_dir: str = "./masks",
+                           shape: tuple = (320, 640)):
     """
     Create mask based on df, image name and shape.
     """
     masks = np.zeros((shape[0], shape[1], 4), dtype=np.float32)
     df = df[df["im_id"] == image_name]
+    label_list = ["Fish", "Flower", "Gravel", "Sugar"]
     for idx, im_name in enumerate(df["im_id"].values):
-        for classidx, classid in enumerate(["Fish", "Flower", "Gravel", "Sugar"]):
+        for classidx, classid in enumerate(label_list):
             mask = cv2.imread(os.path.join(masks_dir, f"{classid}{im_name}"),
                               cv2.IMREAD_GRAYSCALE)
             if mask is None:
@@ -88,18 +81,6 @@ def make_mask_resized_dset(df: pd.DataFrame, image_name: str="img.jpg",
     masks = masks/255
     return masks
 
-def get_classification_label(df: pd.DataFrame, image_name: str):
-    """
-    Gets one-hot encoded labels. Assumes that the dataframe is coming in
-    through ClassificationSteelDataset where there is a "hasMask" column.
-
-    Returns:
-        One-hot encoded torch tensor (length 4) of the label present for
-        each class.
-    """
-    df = df[df["im_id"] == image_name]
-    label = df["hasMask"].values * np.ones(4)
-    return torch.from_numpy(label).float()
 
 def to_tensor(x, **kwargs):
     """
