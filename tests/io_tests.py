@@ -3,10 +3,14 @@ import unittest
 import cv2
 import numpy as np
 import pandas as pd
+import os
 from glob import glob
 from pathlib import Path
+import yaml
+import shutil
 
 from clouds.io.utils import make_mask_single, rle_decode
+from clouds.preprocess import Preprocessor
 
 
 class PreprocessingTests(unittest.TestCase):
@@ -120,6 +124,76 @@ class PreprocessingTests(unittest.TestCase):
         # testing to see if the num_disagreements is less than 1% of the total
         # number of pixels
         self.assertTrue(num_disagreements < overlap.flatten().size * 0.01)
+
+
+class PreprocessorTests(unittest.TestCase):
+    """Testing preprocessing procedures
+    """
+    def setUp(self):
+        """Initializing the parameters:
+        """
+        try:
+            self.img_names = [Path(fpath).name
+                              for fpath in glob("resources/*.jpg")]
+            self.rle_df = pd.read_csv("resources/train_sample.csv")
+        except FileNotFoundError:
+            raise Exception("Please make sure to run tests within the",
+                            "test directory.")
+        # loading the config
+        yml_path = "resources/configs/create_dset.yml"
+        with open(yml_path, 'r') as stream:
+            try:
+                config = yaml.safe_load(stream)
+            except yaml.YAMLError as exc:
+                print(exc)
+
+        paths_params = config["paths_params"]
+        self.paths_dict = {
+            "train_dir": paths_params["train_dir"],
+            "test_dir": paths_params["test_dir"],
+            "train_out": paths_params["train_out"],
+            "test_out": paths_params["test_out"],
+            "masks_out": paths_params["masks_out"],
+        }
+
+        # Creates the directory if it does not already exist
+        for dir_ in ["train_out", "test_out", "masks_out"]:
+            # so it doesn't create the test dir (None)
+            dir_of_interest = self.paths_dict[dir_]
+            if dir_of_interest is not None:
+                if not os.path.isdir(dir_of_interest):
+                    os.mkdir(dir_of_interest)
+
+        self.out_shape_cv2 = (576, 384)
+        self.preprocessor = Preprocessor(self.rle_df, self.paths_dict,
+                                         self.out_shape_cv2)
+
+    def tearDown(self):
+        """Deleting the created files
+        """
+        shutil.rmtree(self.paths_dict["train_out"])
+        shutil.rmtree(self.paths_dict["masks_out"])
+
+    def test_execute_all(self):
+        """Tests execute_all() method.
+
+        This will make sure that 2 masks and training images with the correct
+        shapes are created in the proper directories.
+
+        """
+        self.preprocessor.execute_all()
+
+        train_arr_fpaths = glob("train_576/*.npy")
+        for fpath in train_arr_fpaths:
+            arr = np.load(fpath)
+            self.assertEqual(arr.shape, (384, 576, 3))
+            self.assertEqual(np.unique(arr).size, 256)
+
+        mask_arr_fpaths = glob("masks_576/*.npy")
+        for fpath in mask_arr_fpaths:
+            arr = np.load(fpath)
+            self.assertEqual(arr.shape, (384, 576, 4))
+            self.assertEqual(np.unique(arr).size, 2)
 
 
 def rle2mask_3rd_place(rle, height=256, width=1600, fill_value=1):
