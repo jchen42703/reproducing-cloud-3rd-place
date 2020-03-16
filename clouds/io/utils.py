@@ -48,6 +48,26 @@ def make_mask(df: pd.DataFrame, image_name: str="img.jpg",
 
     return masks
 
+def make_mask_single(df: pd.DataFrame, label: str, image_name: str,
+                     shape: tuple=(1400, 2100)):
+    """
+    Create mask based on df, image name and shape.
+
+    Args:
+        df: dataframe with cols ["Image_Label", "EncodedPixels"]
+    Returns:
+        mask: numpy array with the user-specified shape
+    """
+    assert label in ["Fish", "Flower", "Gravel", "Sugar"]
+    image_label = f"{image_name}_{label}"
+    encoded = df.loc[df["Image_Label"] == image_label, "EncodedPixels"].values
+    # handling NaNs and longer rles
+    encoded = encoded[0] if len(encoded) == 1 else encoded
+    mask = np.zeros((shape[0], shape[1]), dtype=np.float32)
+    if encoded is not np.nan:
+       mask = rle_decode(encoded)
+    return mask
+
 def make_mask_resized_dset(df: pd.DataFrame, image_name: str="img.jpg",
                            masks_dir: str="./masks",
                            shape: tuple=(320, 640)):
