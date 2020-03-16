@@ -22,12 +22,24 @@
   #   - 576
   #   - 384
 
-  # All of training
+  # # All of training
+  # paths_params:
+  #   train_csv_path: C:\Users\Joseph\kaggle_challenges\Understanding Clouds\Datasets\train.csv
+  #   train_dir: C:\Users\Joseph\kaggle_challenges\Understanding Clouds\Datasets\Orig\train_images
+  #   test_dir: ~
+  #   train_out: C:\Users\Joseph\kaggle_challenges\Understanding Clouds\Datasets\resizing_576\train_576
+  #   test_out: ~
+  #   masks_out: C:\Users\Joseph\kaggle_challenges\Understanding Clouds\Datasets\resizing_576\masks_576
+  # out_shape_cv2:
+  #   - 576
+  #   - 384
+
+  # Masks only
   paths_params:
     train_csv_path: C:\Users\Joseph\kaggle_challenges\Understanding Clouds\Datasets\train.csv
-    train_dir: C:\Users\Joseph\kaggle_challenges\Understanding Clouds\Datasets\Orig\train_images
+    train_dir: ~
     test_dir: ~
-    train_out: C:\Users\Joseph\kaggle_challenges\Understanding Clouds\Datasets\resizing_576\train_576
+    train_out: ~
     test_out: ~
     masks_out: C:\Users\Joseph\kaggle_challenges\Understanding Clouds\Datasets\resizing_576\masks_576
   out_shape_cv2:
