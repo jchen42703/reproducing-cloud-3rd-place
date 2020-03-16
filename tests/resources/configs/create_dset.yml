@@ -1,0 +1,12 @@
+  # For testing Preprocessor
+  ## commented out redundant params (for the test case anyways)
+  paths_params:
+    # train_csv_path: resources/train_sample.csv
+    train_dir: resources
+    test_dir: ~
+    train_out: train_576
+    test_out: ~
+    masks_out: masks_576
+  # out_shape_cv2:
+  #   - 576
+  #   - 384
