@@ -192,4 +192,4 @@ def make_mask(df, img_name, shape=(1400, 2100), out_shape_cv2=(576, 384),
         # 3rd place interpolates with bilinear and then thresholds
         resized = (cv2.resize(rle_mask, out_shape_cv2) > 0).astype(int)
         mask[:, :, label_idx] = resized
-    return mask
+    return mask.astype(np.uint8)
