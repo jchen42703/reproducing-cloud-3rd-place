@@ -11,9 +11,9 @@ from clouds.io.utils import make_mask_single
 COLAB_PATHS_DICT = {
     "train_dir": "./train_images/",
     "test_dir": "./test_images/",
-    "train_out": "train640.zip",
-    "test_out": "test640.zip",
-    "mask_out": "masks640.zip",
+    "train_out": "train640",
+    "test_out": "test640",
+    "masks_out": "masks640",
 }
 
 
@@ -27,7 +27,7 @@ class Preprocessor(object):
         test_dir (str / None):
         train_out (str / None):
         test_out (str / None):
-        mask_out (str / None):
+        masks_out (str / None):
             Leave as None, if not using a specific route.
         out_shape_cv2 (tuple): (w, h); reverse of numpy shaping (how
             cv2 handles its input sizing)
@@ -38,7 +38,7 @@ class Preprocessor(object):
     def __init__(self, df, paths_dict=COLAB_PATHS_DICT,
                  out_shape_cv2=(640, 320)):
         """
-        
+
         Args:
             df: dataframe with cols ["Image_Label", "EncodedPixels"];
                 the first dataframe from running `setup_train_and_sub_df(...)`
@@ -49,7 +49,7 @@ class Preprocessor(object):
                 - test_dir
                 - train_out: path to the output training images zip
                 - test_out: path to the output test images zip
-                - mask_out
+                - masks_out
                 Leave as None, if not using a specific route.
             out_shape_cv2 (tuple): (w, h); reverse of numpy shaping (how
                 cv2 handles its input sizing)
@@ -59,7 +59,7 @@ class Preprocessor(object):
         # parsing the paths_dict dictionary
         # setting default values (in the event that the user is missing keys)
         keys_list = ["train_dir", "test_dir", "train_out", "test_out",
-                     "mask_out"]
+                     "masks_out"]
         for key in keys_list:
             setattr(self, key, None)
         # setting actual values from the dict
@@ -119,7 +119,7 @@ class Preprocessor(object):
         for img_name in tqdm(all_img_ids):
             mask = make_mask(self.df, img_name, shape=(1400, 2100),
                              out_shape_cv2=self.out_shape_cv2, num_classes=4)
-            save_path = os.path.join(self.mask_out,
+            save_path = os.path.join(self.masks_out,
                                      f"{Path(img_name).stem}.npy")
             np.save(save_path, mask)
 
@@ -143,7 +143,7 @@ class Preprocessor(object):
                 "Make sure that test_dir is specified."
             self.execute_images(self.test_out, self.test_fpaths)
 
-        if self.mask_out is not None:
+        if self.masks_out is not None:
             print("\nPreprocessing masks...")
             self.execute_masks()
 
@@ -185,11 +185,11 @@ def make_mask(df, img_name, shape=(1400, 2100), out_shape_cv2=(576, 384),
             (`shape`, num_classes)
 
     """
-    mask = np.zeros(shape + (num_classes,))
+    mask = np.zeros((out_shape_cv2[1], out_shape_cv2[0], num_classes))
     for label_idx, label in enumerate(["Fish", "Flower", "Gravel", "Sugar"]):
-        mask = make_mask_single(df, label, img_name,
-                                shape=shape)
+        rle_mask = make_mask_single(df, label, img_name,
+                                    shape=shape)
         # 3rd place interpolates with bilinear and then thresholds
-        resized = (cv2.resize(mask, out_shape_cv2) > 0).astype(int)
+        resized = (cv2.resize(rle_mask, out_shape_cv2) > 0).astype(int)
         mask[:, :, label_idx] = resized
     return mask
