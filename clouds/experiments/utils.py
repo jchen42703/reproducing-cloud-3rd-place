@@ -64,3 +64,25 @@ def seed_everything(seed=42):
     torch.backends.cudnn.benchmark = False
     torch.backends.cudnn.enabled = True
     torch.backends.cudnn.deterministic = True
+
+
+def load_weights(checkpoint_path, model):
+    """Loads weights from a checkpoint.
+
+    Args:
+        checkpoint_path (str): path to a .pt or .pth checkpoint
+        model (torch.nn.Module): <-
+
+    Returns:
+        Model with loaded weights and in train() mode
+
+    """
+    try:
+        # catalyst weights
+        state_dict = torch.load(checkpoint_path, map_location="cpu")
+        state_dict = state_dict["model_state_dict"]
+    except:
+        # anything else
+        state_dict = torch.load(checkpoint_path, map_location="cpu")
+    model.load_state_dict(state_dict, strict=True)
+    return model
