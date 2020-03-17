@@ -41,18 +41,13 @@ def main(config):
 
 
 if __name__ == "__main__":
-    import yaml
     import argparse
+    from clouds.experiments.utils import load_config
 
     parser = argparse.ArgumentParser(description="For training.")
     parser.add_argument("--yml_path", type=str, required=True,
                         help="Path to the .yml config.")
     args = parser.parse_args()
 
-    with open(args.yml_path, 'r') as stream:
-        try:
-            config = yaml.safe_load(stream)
-        except yaml.YAMLError as exc:
-            print(exc)
-
+    config = load_config(args.yml_path)
     main(config)
