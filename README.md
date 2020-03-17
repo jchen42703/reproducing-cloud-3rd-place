@@ -17,7 +17,7 @@ Feel free to change the parameters in the .yml file (such as the image sizes).
   * ResNet34 + FPN w/ BCE [`0.608 Public LB`]
   * ResNet34 + FPN w/ pos-only soft dice loss
   * Single Fold, no TTA, no classifier, no threshold adjustment (=0.5)
-  * This is already better than my previous ensemble of seven models that achieved `~0.648 Public LB`
+  * This is already better than my previous ensemble of four models that achieved `~0.660 Public LB`
     * And those were with TTA and a classifier!
   * Parameter Summary:
   ```
