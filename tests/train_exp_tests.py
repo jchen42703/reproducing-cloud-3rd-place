@@ -2,13 +2,13 @@ from glob import glob
 import os
 import pandas as pd
 from pathlib import Path
-import yaml
 import unittest
 import shutil
 import torch
 
 from clouds.preprocess import Preprocessor
 from clouds.experiments import TrainSegExperiment
+from clouds.experiments.utils import load_config
 
 
 class TrainExperimentsTests(unittest.TestCase):
@@ -59,7 +59,7 @@ class TrainExperimentsTests(unittest.TestCase):
 
         # type checking
         self.assertTrue(isinstance(exp.opt, torch.optim.Optimizer))
-        self.assertTrue(isinstance(exp.lr_scheduler, 
+        self.assertTrue(isinstance(exp.lr_scheduler,
                                    torch.optim.lr_scheduler._LRScheduler))
         self.assertTrue(isinstance(exp.train_dset, torch.utils.data.Dataset))
         self.assertTrue(isinstance(exp.val_dset, torch.utils.data.Dataset))
@@ -75,20 +75,6 @@ class TrainExperimentsTests(unittest.TestCase):
         """Testing that TrainSegExperiment loads weights properly
         """
         pass
-
-
-def load_config(yml_path):
-    """Loads a .yml file.
-
-    Returns:
-        config (dict): parsed .yml config
-    """
-    with open(yml_path, 'r') as stream:
-        try:
-            config = yaml.safe_load(stream)
-        except yaml.YAMLError as exc:
-            print(exc)
-    return config
 
 
 def load_paths_dict(preprocess_config):

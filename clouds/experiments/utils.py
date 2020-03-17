@@ -4,6 +4,7 @@ import os
 import random
 import numpy as np
 import torch
+import yaml
 
 
 def get_train_transforms(aug_key="mvp"):
@@ -86,3 +87,21 @@ def load_weights(checkpoint_path, model):
         state_dict = torch.load(checkpoint_path, map_location="cpu")
     model.load_state_dict(state_dict, strict=True)
     return model
+
+
+def load_config(yml_path):
+    """Loads a .yml file.
+
+    Args:
+        yml_path (str): Path to a .yaml or .yml file.
+
+    Returns:
+        config (dict): parsed .yml config
+
+    """
+    with open(yml_path, 'r') as stream:
+        try:
+            config = yaml.safe_load(stream)
+        except yaml.YAMLError as exc:
+            print(exc)
+    return config
