@@ -22,6 +22,7 @@ setup(name='clouds',
             "wandb",
             "pytorch_toolbelt",
             "pretrainedmodels",
+            "segmentation_models_pytorch",
       ],
       classifiers=[
           'Development Status :: 3 - Alpha',
