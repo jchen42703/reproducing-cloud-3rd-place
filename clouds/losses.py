@@ -2,7 +2,7 @@
 # @Date:   2019-12-22, 1:32:21
 # @Last modified by:   xuan
 # @Last modified time: 2019-12-22, 1:33:21
-# from: 
+# from:
 # https://github.com/naivelamb/kaggle-cloud-organization/blob/master/losses.py
 
 
@@ -19,7 +19,7 @@ class FocalLoss(nn.Module):
         self.alpha = alpha
         if isinstance(alpha, (float, int)):
             self.alpha = torch.Tensor([alpha, 1 - alpha])
-        if isinstance(alpha, list): 
+        if isinstance(alpha, list):
             self.alpha = torch.Tensor(alpha)
         self.size_average = size_average
 
@@ -46,6 +46,10 @@ class FocalLoss(nn.Module):
 
 
 class SoftDiceLoss(nn.Module):
+    """Differentiable soft dice loss.
+
+    Note: Sigmoid is automatically applied here!
+    """
     def __init__(self):
         super(SoftDiceLoss, self).__init__()
 
@@ -73,7 +77,7 @@ class WeightedBCE(nn.Module):
         truth = truth.view(batch_size, num_class)
         assert(logit.shape == truth.shape)
 
-        loss = F.binary_cross_entropy_with_logits(logit, truth, 
+        loss = F.binary_cross_entropy_with_logits(logit, truth,
                                                   reduction='none')
 
         if self.weights is None:
@@ -88,93 +92,133 @@ class WeightedBCE(nn.Module):
         return loss
 
 
-def multiclass_dice_loss(logits, targets):
-    loss = 0
-    dice = SoftDiceLoss()
-    num_classes = targets.size(1)
-    for class_nr in range(num_classes):
-        loss += dice(logits[:, class_nr, :, :], targets[:, class_nr, :, :])
-    return loss/num_classes
+class MultiLabelDiceLoss(nn.Module):
+    """The average dice across multiple classes.
+
+    Note: Sigmoid is automatically applied here!
+    """
+    def __init__(self):
+        super(MultiLabelDiceLoss, self).__init__()
+        self.dice_loss = SoftDiceLoss()
+
+    def forward(self, logits, targets):
+        loss = 0
+        num_classes = targets.size(1)
+        for class_nr in range(num_classes):
+            loss += self.dice_loss(logits[:, class_nr, :, :],
+                                   targets[:, class_nr, :, :])
+        return loss/num_classes
 
 
-def combo_loss(logits, fc=0, labels=0, labels_fc=0, weights=[0.1, 0, 1],
-               activation=None, per_image=0):
-    # weights -> [image_cls, pixel_seg, pixel_cls]
-    # image class
-    if activation == 'sigmoid':
-        p_labels = F.sigmoid(logits)
-    elif activation is None:
-        p_labels = logits
-    else:
-        RuntimeError('%s activation not implemented' % (activation))
-    if weights[0]:
-        loss_fc = weights[0] * nn.BCEWithLogitsLoss(reduce=True)(fc, labels_fc)
-    else:
-        loss_fc = torch.tensor(0).cuda()
-    if weights[1] or weights[2]:
-        # pixel seg
-        if per_image:
-            loss_seg_dice = weights[1] * SoftDiceLoss()(p_labels, labels)
+class ComboLoss(nn.Module):
+    """Weighted classification and segmentation loss.
+
+    Attributes:
+        weights (list):
+        activation:
+        bce: with logits loss
+        dice_loss: soft dice loss (all classes)
+
+    """
+    def __init__(self, weights=[0.1, 0, 1], activation=None):
+        """
+        Args:
+            weights (list): [image_cls, pixel_seg, pixel_cls]
+            activation: One of ['sigmoid', None]
+        """
+        super(ComboLoss, self).__init__()
+        self.weights = weights
+        self.activation = activation
+        assert self.activation in ["sigmoid", None], \
+            "`activation` must be one of ['sigmoid', None]."
+        self.bce = nn.BCEWithLogitsLoss(reduce=True)
+        self.dice_loss = MultiLabelDiceLoss()
+
+    def create_fc_tensors(self, logits, targets):
+        """Creates the classification tensors from the segmentation ones.
+        """
+        batch_size, num_classes, _, _ = targets.shape
+        # gathers all of the slices that actually have an ROI
+        summed = targets.view(batch_size, num_classes, -1).sum(-1)
+        targets_fc = (summed > 0).float()
+        # gathers all of the slices that have been predicted to have an ROI
+        logits_fc = logits.view(batch_size, num_classes, -1)
+        logits_fc = torch.max(logits_fc, -1)[0]
+        return logits_fc, targets_fc
+
+    def forward(self, logits, targets):
+        # Classification tensors derived from the segmentation ones
+        logits_fc, targets_fc = self.create_fc_tensors(logits, targets)
+        # Activation output
+        p = F.sigmoid(logits) if self.activation == "sigmoid" else logits
+
+        # Actual computing the losses
+        if self.weights[0]:
+            loss_fc = self.weights[0] * self.bce(logits_fc, targets_fc)
         else:
-            loss_seg_dice = weights[1] * multiclass_dice_loss(p_labels, labels)
-        # pixel cls
-        loss_seg_bce = weights[2] * nn.BCEWithLogitsLoss(reduce=True)(logits, 
-                                                                      labels)
-    else:
-        loss_seg_dice = torch.tensor(0).cuda()
-        loss_seg_bce = torch.tensor(0).cuda()
+            loss_fc = torch.tensor(0).cuda()
 
-    loss = loss_fc + loss_seg_bce + loss_seg_dice
-    return loss, [loss_seg_bce, loss_seg_dice, loss_fc]
-
-
-def combo_loss_onlypos(logits, fc=0, labels=0, labels_fc=0,
-                       weights=[0.1, 0, 1]):
-    # weights -> [image_cls, pixel_seg, pixel_cls]
-    # image class
-    n_pos = labels_fc.sum()
-    pos_idx = (labels_fc > 0.5)
-    neg_idx = (labels_fc < 0.5)
-    if weights[0]:
-        loss_fc = weights[0] * nn.BCEWithLogitsLoss(reduce=True)(fc[neg_idx],
-                                                                 labels_fc[neg_idx])
-    else:
-        loss_fc = torch.tensor(0).cuda()
-    if weights[1] or weights[2]:
-        # pixel seg
-        if n_pos == 0:
+        if self.weights[1] or self.weights[2]:
+            loss_seg_dice = self.weights[1] * self.dice_loss(p, targets)
+            # pixel cls
+            loss_seg_bce = self.weights[2] * self.bce(logits, targets)
+        else:
             loss_seg_dice = torch.tensor(0).cuda()
+            loss_seg_bce = torch.tensor(0).cuda()
+
+        loss = loss_fc + loss_seg_bce + loss_seg_dice
+        return loss
+
+
+class ComboLossOnlyPos(ComboLoss):
+    """Weighted classification and segmentation loss. (Considers only positive)
+
+    This loss is only calculated on labels with ROIs in them to maximize
+    the foreground class prediction capability.
+
+    Attributes:
+        weights (list):
+        activation:
+        bce: with logits loss
+        dice_loss: soft dice loss (per class)
+
+    """
+    def __init__(self, weights=[0.1, 0, 1], activation=None):
+        """
+        Args:
+            weights (list): [image_cls, pixel_seg, pixel_cls]
+            activation: One of ['sigmoid', None]
+        """
+        super().__init__(weights=weights, activation=activation)
+        self.dice_loss = SoftDiceLoss()
+
+    def forward(self, logits, targets):
+        logits_fc, targets_fc = self.create_fc_tensors(logits, targets)
+        # extracting the positive and negative class indices
+        n_pos = targets_fc.sum()
+        pos_idx = (targets_fc > 0.5)
+        neg_idx = (targets_fc < 0.5)
+
+        # Actual computing the losses
+        if self.weights[0]:
+            loss_fc = self.weights[0] * self.bce(logits_fc[neg_idx],
+                                                 targets_fc[neg_idx])
         else:
-            loss_seg_dice = weights[1] * SoftDiceLoss()(logits[pos_idx], labels[pos_idx])
-        # pixel cls
-        loss_seg_bce = weights[2] * nn.BCEWithLogitsLoss(reduce=True)(logits[pos_idx], labels[pos_idx])
-    else:
-        loss_seg_dice, loss_seg_bce = torch.tensor(0).cuda(), torch.tensor(0).cuda()
+            loss_fc = torch.tensor(0).cuda()
 
-    loss = loss_fc + loss_seg_bce + loss_seg_dice
-    return loss, [loss_seg_bce, loss_seg_dice, loss_fc]
-
-
-def combo_loss_posDice(logits, fc=0, labels=0, labels_fc=0, weights=[0.1, 0, 1]):
-    # weights -> [image_cls, pixel_seg, pixel_cls]
-    # image class
-    n_pos = labels_fc.sum()
-    pos_idx = (labels_fc > 0.5)
-    neg_idx = (labels_fc < 0.5)
-    if weights[0]:
-        loss_fc = weights[0] * nn.BCEWithLogitsLoss(reduce=True)(fc, labels_fc)
-    else:
-        loss_fc = torch.tensor(0).cuda()
-    if weights[1] or weights[2]:
-        # pixel seg
-        if n_pos == 0:
+        if self.weights[1] or self.weights[2]:
+            logits_pos, targets_pos = logits[pos_idx], targets[pos_idx]
+            # pixel seg
+            if n_pos == 0:
+                loss_seg_dice = torch.tensor(0).cuda()
+            else:
+                loss_seg_dice = self.weights[1] * self.dice_loss(logits_pos,
+                                                                 targets_pos)
+            # pixel cls
+            loss_seg_bce = self.weights[2] * self.bce(logits_pos, targets_pos)
+        else:
             loss_seg_dice = torch.tensor(0).cuda()
-        else:
-            loss_seg_dice = weights[1] * SoftDiceLoss()(logits[pos_idx], labels[pos_idx])
-        # pixel cls
-        loss_seg_bce = weights[2] * nn.BCEWithLogitsLoss(reduce=True)(logits, labels)
-    else:
-        loss_seg_dice, loss_seg_bce = torch.tensor(0).cuda(), torch.tensor(0).cuda()
+            loss_seg_bce = torch.tensor(0).cuda()
 
-    loss = loss_fc + loss_seg_bce + loss_seg_dice
-    return loss, [loss_seg_bce, loss_seg_dice, loss_fc]
+        loss = loss_fc + loss_seg_bce + loss_seg_dice
+        return loss
