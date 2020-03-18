@@ -35,6 +35,7 @@ def main(config):
         callbacks=exp.cb_list,
         logdir=config["logdir"],
         num_epochs=config["num_epochs"],
+        valid_loader="val",
         verbose=True,
         fp16=config["fp16"]
     )

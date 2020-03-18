@@ -47,7 +47,7 @@ class TrainExperiment(object):
         self.cb_list = self.get_callbacks()
 
     @abstractmethod
-    def get_datasets(self, train_ids, valid_ids):
+    def get_datasets(self, train_ids, val_ids):
         """Initializes transforms and datasets.
 
         Initializes the data augmentation and preprocessing transforms. Creates
@@ -83,10 +83,10 @@ class TrainExperiment(object):
         return train
 
     def get_split(self):
-        """Creates train/valid filename splits
+        """Creates train/val filename splits
 
         Returns:
-            (train_ids, valid_ids)
+            (train_ids, val_ids)
 
         """
         # setting up the train/val split with filenames
@@ -95,10 +95,10 @@ class TrainExperiment(object):
         # doing the splits
         print("Splitting the df normally...")
         img_ids = self.df["im_id"].drop_duplicates().values
-        train_ids, valid_ids = train_test_split(img_ids,
-                                                random_state=split_seed,
-                                                test_size=test_size)
-        return (train_ids, valid_ids)
+        train_ids, val_ids = train_test_split(img_ids,
+                                              random_state=split_seed,
+                                              test_size=test_size)
+        return (train_ids, val_ids)
 
     def get_loaders(self):
         """Creates train/val loaders from datasets
@@ -108,7 +108,7 @@ class TrainExperiment(object):
         Returns:
             dictionary with keys:
             - 'train': train loader
-            - 'valid': validation loader
+            - 'val': validation loader
 
         """
         # setting up the loaders
@@ -116,11 +116,11 @@ class TrainExperiment(object):
         num_workers = self.io_params["num_workers"]
         train_loader = DataLoader(self.train_dset, batch_size=batch_size,
                                   shuffle=True, num_workers=num_workers)
-        valid_loader = DataLoader(self.val_dset, batch_size=batch_size,
-                                  shuffle=False, num_workers=num_workers)
+        val_loader = DataLoader(self.val_dset, batch_size=batch_size,
+                                shuffle=False, num_workers=num_workers)
 
         self.train_steps = len(self.train_dset)  # for schedulers
-        return {"train": train_loader, "valid": valid_loader}
+        return {"train": train_loader, "val": val_loader}
 
     def get_opt(self):
         """Creates the optimizer

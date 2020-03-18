@@ -2,8 +2,8 @@ import segmentation_models_pytorch as smp
 
 from clouds.io import CloudDataset
 from .train import TrainExperiment
-from .utils import get_preprocessing, get_train_transforms, \
-                   get_valid_transforms
+from .utils import get_preprocessing, get_train_transforms, get_val_transforms
+
 
 class TrainSegExperiment(TrainExperiment):
     """Stores the main parts of a segmentation experiment:
@@ -26,17 +26,17 @@ class TrainSegExperiment(TrainExperiment):
         """
         super().__init__(config=config)
 
-    def get_datasets(self, train_ids, valid_ids):
+    def get_datasets(self, train_ids, val_ids):
         """
         Creates and returns the train and validation datasets.
         """
         # preparing transforms
-        encoder = self.model_params["encoder"]
+        # encoder = self.model_params["encoder"]
         # preprocessing_fn = smp.encoders.get_preprocessing_fn(encoder,
         #                                                      "imagenet")
         preprocessing_transform = get_preprocessing()
         train_aug = get_train_transforms(self.io_params["aug_key"])
-        val_aug = get_valid_transforms(self.io_params["aug_key"])
+        val_aug = get_val_transforms(self.io_params["aug_key"])
         dset_kwargs = {
             "data_folder": self.io_params["image_folder"],
             "masks_folder": self.io_params["masks_folder"],
@@ -45,9 +45,9 @@ class TrainSegExperiment(TrainExperiment):
         # creating the datasets
         train_dataset = CloudDataset(img_ids=train_ids, transforms=train_aug,
                                      **dset_kwargs)
-        valid_dataset = CloudDataset(img_ids=valid_ids, transforms=val_aug,
-                                     **dset_kwargs)
-        return (train_dataset, valid_dataset)
+        val_dataset = CloudDataset(img_ids=val_ids, transforms=val_aug,
+                                   **dset_kwargs)
+        return (train_dataset, val_dataset)
 
     def get_model(self):
         encoder = self.model_params["encoder"].lower()
@@ -66,7 +66,8 @@ class TrainSegExperiment(TrainExperiment):
                             **self.model_params[decoder])
         # calculating # of parameters
         total = sum(p.numel() for p in model.parameters())
-        trainable = sum(p.numel() for p in model.parameters() if p.requires_grad)
+        trainable = sum(p.numel() for p in model.parameters()
+                        if p.requires_grad)
         print(f"Total # of Params: {total}\nTrainable params: {trainable}")
 
         return model

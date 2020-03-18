@@ -23,7 +23,7 @@ def get_train_transforms(aug_key="mvp"):
     return albu.Compose(train_transform)
 
 
-def get_valid_transforms(aug_key="mvp"):
+def get_val_transforms(aug_key="mvp"):
     """Validation transforms
     """
     transform_dict = {
