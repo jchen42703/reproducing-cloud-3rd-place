@@ -39,7 +39,7 @@
       CosineAnnealingWarmRestarts:
         T_max: 3
         T_mult: 1
-        eta_min: 1e-6
+        eta_min: 0.000001
 
   callback_params:
     EarlyStoppingCallback:
