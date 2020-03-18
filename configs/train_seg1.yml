@@ -1,0 +1,59 @@
+  train_csv_path: resources/train_sample.csv
+
+  runner_params:
+    logdir: /content/logs/segmentation/
+    num_epochs: 30
+    fp16: False
+    verbose: True
+
+  io_params:
+    image_folder: /content/train_images
+    masks_folder: /content/masks
+    test_size: 0.2
+    split_seed: 350
+    batch_size: 16
+    num_workers: 2
+    aug_key: mvp
+
+  criterion_params:
+    loss: ComboLoss
+    ComboLoss:
+      weights:
+        - 0
+        - 0
+        - 1
+
+  model_params:
+    encoder: resnet34
+    decoder: fpn
+    unet:
+      attention_type: ~ # scse
+      decoder_use_batchnorm: True # inplace for InplaceABN
+    fpn:
+      dropout: 0.2
+
+  opt_params:
+    opt: Adam
+    Adam:
+      lr: 0.0005
+      weight_decay: 0
+      eps: 0.00000001 # 1e-8
+    scheduler_params:
+      scheduler: CosineAnnealingWarmRestarts
+      CosineAnnealingWarmRestarts:
+        T_max: 10
+        T_mult: 1
+        eta_min: 0.000001
+
+  callback_params:
+    EarlyStoppingCallback:
+      patience: 11
+      min_delta: 0.001
+    PrecisionRecallF1ScoreCallback:
+      num_classes: 4
+      threshold: 0.5
+      activation: Sigmoid
+
+    checkpoint_params:
+      checkpoint_path: ~
+      mode: model_only
