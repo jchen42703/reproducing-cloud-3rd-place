@@ -8,7 +8,7 @@ def main(config):
 
     Args:
         config (dict): dictionary read from a yaml file
-            i.e. experiments/finetune_classification.yml
+            i.e. configs/train_seg1.yml
 
     Returns:
         None
@@ -33,11 +33,11 @@ def main(config):
         scheduler=exp.lr_scheduler,
         loaders=exp.loaders,
         callbacks=exp.cb_list,
-        logdir=config["logdir"],
-        num_epochs=config["num_epochs"],
+        logdir=config["runner_params"]["logdir"],
+        num_epochs=config["runner_params"]["num_epochs"],
         valid_loader="val",
-        verbose=True,
-        fp16=config["fp16"]
+        verbose=config["runner_params"]["verbose"],
+        fp16=config["runner_params"]["fp16"]
     )
 
 
