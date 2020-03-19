@@ -67,10 +67,10 @@ class TrainExperiment(object):
         return
 
     def setup_df(self):
-        """Setting up the dataframe to have the `im_id` & `label` columns;
+        """Setting up the dataframe to have the `img_id` & `label` columns;
 
         Meanings:
-            im_id: the base img name (without the class name)
+            img_id: the base img name (without the class name)
             label: the label name
 
         Returns:
@@ -99,7 +99,7 @@ class TrainExperiment(object):
         test_size: float = self.io_params["test_size"]
         # doing the splits
         print("Splitting the df normally...")
-        img_ids = self.df["im_id"].drop_duplicates().values
+        img_ids = self.df["img_id"].drop_duplicates().values
         train_ids, val_ids = train_test_split(img_ids,
                                               random_state=split_seed,
                                               test_size=test_size)
