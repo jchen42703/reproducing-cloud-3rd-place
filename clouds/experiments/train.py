@@ -9,7 +9,12 @@ import torch
 from torch.nn import BCELoss, BCEWithLogitsLoss, CrossEntropyLoss
 
 from clouds.losses import *
+from clouds.custom_lr_schedulers import WarmRestartsCustomScheduler
 from .utils import load_weights
+
+torch.optim.lr_scheduler.__dict__.update({
+    "WarmRestartsCustomScheduler": WarmRestartsCustomScheduler
+})
 
 
 class TrainExperiment(object):
