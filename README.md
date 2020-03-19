@@ -35,3 +35,9 @@ Feel free to change the parameters in the .yml file (such as the image sizes).
   5-fold + TTA3: 0.669
   5-fold + TTA3 + classifier: 0.670.
   ```
+
+### Training
+* WarmRestarts
+  * WarmRestart(T_mult=2) for 28 epochs
+  * for epochs 29-31, LR = 1e-5
+  * for epochs 32-35, LR = 5e-6
