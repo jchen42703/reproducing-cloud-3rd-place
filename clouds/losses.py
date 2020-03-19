@@ -56,7 +56,7 @@ class SoftDiceLoss(nn.Module):
     def forward(self, logits, targets):
         eps = 1e-9
         num = targets.size(0)
-        probs = F.sigmoid(logits)
+        probs = torch.sigmoid(logits)
         m1 = probs.view(num, -1)
         m2 = targets.view(num, -1).float()
         intersection = torch.sum(m1 * m2, 1)
@@ -150,7 +150,7 @@ class ComboLoss(nn.Module):
         # Classification tensors derived from the segmentation ones
         logits_fc, targets_fc = self.create_fc_tensors(logits, targets)
         # Activation output
-        p = F.sigmoid(logits) if self.activation == "sigmoid" else logits
+        p = torch.sigmoid(logits) if self.activation == "sigmoid" else logits
 
         # Actual computing the losses
         if self.weights[0]:
