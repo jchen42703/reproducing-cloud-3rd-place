@@ -1,4 +1,4 @@
-  sample_sub_csv_path: sample_submission.csv
+  sample_sub_csv_path: resources/sample_sub_testing.csv
 
   io_params:
     image_folder: train_576
@@ -21,8 +21,8 @@
     - fpn_resnet34_seg1_seed350_mvp_best.pth
 
   infer_params:
-    tta_flips: #~
-      - lr_flip
+    # tta_flips: #~
+    #   - lr_flip
       # - ud_flip
       # - lrud_flip
     class_params:

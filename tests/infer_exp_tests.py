@@ -46,14 +46,13 @@ class InferExperimentsTests(unittest.TestCase):
         self.preprocessor.execute_all()
 
         # Inference specific prep
-        download_sample_sub(), download_weights()
+        download_weights()
 
     def tearDown(self):
         """Deleting the created files
         """
         shutil.rmtree(self.paths_dict["train_out"])
         shutil.rmtree(self.paths_dict["masks_out"])
-        os.remove("sample_submission.csv")
         os.remove("fpn_resnet34_seg1_seed350_mvp_best.pth")
 
     def test_GeneralInferExperiment(self):
@@ -116,7 +115,7 @@ def test_model_equal(model_1, model_2):
         else:
             models_differ += 1
             if (key_item_1[0] == key_item_2[0]):
-                print('Mismtach found at', key_item_1[0])
+                print('Mismatch found at', key_item_1[0])
             else:
                 raise Exception
     if models_differ == 0:
