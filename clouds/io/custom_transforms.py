@@ -1,6 +1,7 @@
 from albumentations.core.transforms_interface import BasicTransform
 import torch
 
+
 class ToTensorV2(BasicTransform):
     """Converts both the image and mask to Tensors.
 
