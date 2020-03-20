@@ -6,7 +6,7 @@ import segmentation_models_pytorch as smp
 from torch.utils.data import DataLoader
 
 from clouds.io import TestCloudDataset
-from .utils import get_val_transforms, get_preprocessing
+from .utils import get_val_transforms, get_preprocessing, load_checkpoints
 
 
 class InferExperiment(object):
@@ -37,7 +37,8 @@ class InferExperiment(object):
         self.test_ids = self.get_test_ids()
         self.test_dset = self.get_datasets(self.test_ids)
         self.loaders = self.get_loaders()
-        self.models = self.get_models()
+        self.model = load_checkpoints(self.config["checkpoint_paths"],
+                                      self.get_models())
 
     @abstractmethod
     def get_datasets(self, test_ids):
