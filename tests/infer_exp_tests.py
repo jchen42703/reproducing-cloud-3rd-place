@@ -46,7 +46,7 @@ class InferExperimentsTests(unittest.TestCase):
         self.preprocessor.execute_all()
 
         # Inference specific prep
-        download_sample_sub()
+        download_sample_sub(), download_weights()
 
     def tearDown(self):
         """Deleting the created files
@@ -54,6 +54,7 @@ class InferExperimentsTests(unittest.TestCase):
         shutil.rmtree(self.paths_dict["train_out"])
         shutil.rmtree(self.paths_dict["masks_out"])
         os.remove("sample_submission.csv")
+        os.remove("fpn_resnet34_seg1_seed350_mvp_best.pth")
 
     def test_GeneralInferExperiment(self):
         """Testing that GeneralInferExperiment contains the correct components.
@@ -70,9 +71,7 @@ class InferExperimentsTests(unittest.TestCase):
         self.assertTrue(isinstance(exp.test_dset, torch.utils.data.Dataset))
         self.assertTrue(isinstance(exp.loaders["test"],
                                    torch.utils.data.DataLoader))
-        self.assertTrue(isinstance(exp.models, list))
-        for model in exp.models:
-            self.assertTrue(isinstance(model, torch.nn.Module))
+        self.assertTrue(isinstance(exp.model, torch.nn.Module))
 
         # value checking
         # Models (only ResNet34 + FPN in this case)
@@ -86,6 +85,12 @@ class InferExperimentsTests(unittest.TestCase):
                          encoder_weights=None,
                          classes=4, activation=None,
                          decoder_dropout=0.2)
+        checkpoint_path = "fpn_resnet34_seg1_seed350_mvp_best.pth"
+        state_dict = torch.load(checkpoint_path, map_location="cpu")
+        state_dict = state_dict["model_state_dict"]
+        model2.load_state_dict(state_dict, strict=True)
+        model2 = model2.cuda().eval()
+
         self.assertTrue(test_model_equal(model1, model2))
 
     # def test_GeneralInferExperiment_Stage1(self):
