@@ -10,6 +10,8 @@ from clouds.preprocess import Preprocessor
 from clouds.experiments import TrainSegExperiment
 from clouds.experiments.utils import load_config
 
+from .utils import load_paths_dict
+
 
 class TrainExperimentsTests(unittest.TestCase):
     """Testing preprocessing procedures
@@ -75,29 +77,6 @@ class TrainExperimentsTests(unittest.TestCase):
         """Testing that TrainSegExperiment loads weights properly
         """
         pass
-
-
-def load_paths_dict(preprocess_config):
-    """Creates a dictionary of paths without the path to the df.
-
-    This is so that the attributes for Preprocessor can be set recursively.
-
-    Args:
-        preprocess_config (dict): From loading 'create_dset.yml'
-    Returns:
-        paths_dict (dict): same as config['paths_params'] but without the
-            'train_csv_path'
-
-    """
-    paths_params = preprocess_config["paths_params"]
-    paths_dict = {
-        "train_dir": paths_params["train_dir"],
-        "test_dir": paths_params["test_dir"],
-        "train_out": paths_params["train_out"],
-        "test_out": paths_params["test_out"],
-        "masks_out": paths_params["masks_out"],
-    }
-    return paths_dict
 
 
 unittest.main(argv=[''], verbosity=2, exit=False)
