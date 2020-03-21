@@ -48,3 +48,35 @@ class CloudDataset(Dataset):
 
     def __len__(self):
         return len(self.img_ids)
+
+
+class TestCloudDataset(CloudDataset):
+    def __init__(self, img_ids: np.array, data_folder: str, transforms=None,
+                 preprocessing=None):
+        """
+        Attributes
+            img_ids (np.ndarray): of image names.
+            data_folder (str): path to the image directory
+            transforms (albumentations.augmentation): transforms to apply
+                before preprocessing. Defaults to None.
+            preprocessing (albumentations.augmentation): ops to perform after
+                transforms, such as z-score standardization. Defaults to None.
+        """
+        super().__init__(img_ids, data_folder, masks_folder=None,
+                         transforms=transforms, preprocessing=preprocessing)
+
+    def __getitem__(self, idx):
+        img_name = self.img_ids[idx]
+
+        # loading image
+        img_path = os.path.join(self.data_folder, img_name)
+        img = cv2.cvtColor(np.load(img_path), cv2.COLOR_BGR2RGB)
+
+        # apply augmentations
+        if self.transforms:
+            augmented = self.transforms(image=img)
+            img = augmented["image"]
+        if self.preprocessing:
+            preprocessed = self.preprocessing(image=img)
+            img = preprocessed["image"]
+        return img

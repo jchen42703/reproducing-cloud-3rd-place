@@ -4,7 +4,25 @@ import os
 import random
 import numpy as np
 import torch
+from torch.jit import load
 import yaml
+
+
+class EnsembleModel(object):
+    """
+    Callable class for ensembled model inference
+    """
+    def __init__(self, models):
+        self.models = models
+        assert len(self.models) > 1
+
+    def __call__(self, x):
+        res = []
+        with torch.no_grad():
+            for m in self.models:
+                res.append(m(x))
+        res = torch.stack(res)
+        return torch.mean(res, dim=0)
 
 
 def get_train_transforms(aug_key="mvp"):
@@ -86,6 +104,56 @@ def load_weights(checkpoint_path, model):
         # anything else
         state_dict = torch.load(checkpoint_path, map_location="cpu")
     model.load_state_dict(state_dict, strict=True)
+    return model
+
+
+def load_checkpoints(checkpoint_paths, models):
+    """Loads checkpoints.
+
+    Either loads a single checkpoint or loads an ensemble of checkpoints
+    from `checkpoint_paths`
+
+    Args:
+        checkpoint_paths (list[str]): list of paths to checkpoints
+        models (list[torch.nn.Module]): models corresponding to the
+            checkpoint_paths. 
+            If it is left as [], the function assumes that the weights
+            are traced (so no models are needed).
+
+    Returns:
+        model (torch.nn.Module): The single/ensembled model
+
+    """
+    assert isinstance(checkpoint_paths, list), \
+        "Make sure checkpoint_paths is specified in list format in the\
+        yaml file."
+    assert isinstance(models, list), \
+        "Make sure model_names is specified in list format in the\
+        yaml file."
+    if len(models) != 0:
+        assert len(checkpoint_paths) == len(models), \
+            "The number of checkpoints and models should be the same."
+
+    # single model instances
+    if len(checkpoint_paths) == 1:
+        try:
+            # loading traceable
+            model = load(checkpoint_paths[0]).cuda().eval()
+            print(f"Traced model from {checkpoint_paths}")
+        except:
+            model = load_weights(checkpoint_paths[0],
+                                 models[0]).cuda().eval()
+            print(f"Loaded model from {checkpoint_paths}")
+    # ensembled models
+    elif len(checkpoint_paths) > 1:
+        try:
+            model = EnsembleModel([load(path).cuda().eval()
+                                   for path in checkpoint_paths])
+        except:
+            model = EnsembleModel([load_weights(path, model).cuda().eval()
+                                   for (path, model) in
+                                   zip(checkpoint_paths, models)])
+        print(f"Loaded an ensemble from {checkpoint_paths}")
     return model
 
 
