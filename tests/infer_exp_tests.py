@@ -74,14 +74,9 @@ class InferExperimentsTests(unittest.TestCase):
                                    torch.utils.data.DataLoader))
         self.assertTrue(isinstance(exp.model, torch.nn.Module))
 
-        # value checking
+        # Checking that checkpoint loading is correct
         # Models (only ResNet34 + FPN in this case)
-        # Note: GeneralInferExperiment doesn't actually load the weights
-        # so this should just be the regular weights
-        # This actually might fail because random weight initialization
-        # and I didn't seed...
-        # I should just move the weight loading to GeneralInferExperiment lol
-        model1 = exp.models[0]
+        model1 = exp.model
         model2 = smp.FPN(encoder_name="resnet34",
                          encoder_weights=None,
                          classes=4, activation=None,
