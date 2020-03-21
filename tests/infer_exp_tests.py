@@ -12,7 +12,7 @@ from clouds.preprocess import Preprocessor
 from clouds.experiments import GeneralInferExperiment
 from clouds.experiments.utils import load_config
 
-from .utils import load_paths_dict, download_weights, test_model_equal
+from utils import load_paths_dict, download_weights, test_model_equal
 
 
 class InferExperimentsTests(unittest.TestCase):

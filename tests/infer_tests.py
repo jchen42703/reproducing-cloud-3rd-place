@@ -10,7 +10,7 @@ from clouds.inference import Inference
 from clouds.experiments import GeneralInferExperiment
 from clouds.experiments.utils import load_config
 
-from .utils import load_paths_dict, download_weights
+from utils import load_paths_dict, download_weights
 
 
 class InferExperimentsTests(unittest.TestCase):

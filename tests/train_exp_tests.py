@@ -10,7 +10,7 @@ from clouds.preprocess import Preprocessor
 from clouds.experiments import TrainSegExperiment
 from clouds.experiments.utils import load_config
 
-from .utils import load_paths_dict
+from utils import load_paths_dict
 
 
 class TrainExperimentsTests(unittest.TestCase):
