@@ -1,0 +1,3 @@
+  stage1_csv_path: C:\Users\Joseph\kaggle_challenges\Submissions\cloud\stage1_sub.csv
+  stage2_csv_path: C:\Users\Joseph\kaggle_challenges\Submissions\cloud\stage2_submission_resnet34_fpn.csv
+  save_path: C:\Users\Joseph\kaggle_challenges\Submissions\cloud\combined_seed350_resnet34_fpn.csv
