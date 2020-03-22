@@ -34,14 +34,27 @@
   #   - 576
   #   - 384
 
-  # Masks only
+  # # Masks only
+  # paths_params:
+  #   train_csv_path: C:\Users\Joseph\kaggle_challenges\Understanding Clouds\Datasets\train.csv
+  #   train_dir: ~
+  #   test_dir: ~
+  #   train_out: ~
+  #   test_out: ~
+  #   masks_out: C:\Users\Joseph\kaggle_challenges\Understanding Clouds\Datasets\resizing_576\masks_576
+  # out_shape_cv2:
+  #   - 576
+  #   - 384
+
+  # Test set only
+# python C:\Users\jchen\ml_projects_active\kaggle_challenges\reproducing-cloud-3rd-place\scripts\create_resized_dset.py --yml_path="C:\Users\jchen\ml_projects_active\kaggle_challenges\reproducing-cloud-3rd-place\configs\create_dset.yml"
   paths_params:
-    train_csv_path: C:\Users\Joseph\kaggle_challenges\Understanding Clouds\Datasets\train.csv
+    train_csv_path: ~ # only needed for creating masks
     train_dir: ~
-    test_dir: ~
+    test_dir: C:\Users\jchen\Desktop\Datasets\Understanding Clouds\understanding_cloud_organization\test_images
     train_out: ~
-    test_out: ~
-    masks_out: C:\Users\Joseph\kaggle_challenges\Understanding Clouds\Datasets\resizing_576\masks_576
+    test_out: C:\Users\jchen\Desktop\Datasets\Understanding Clouds\test_576
+    masks_out: ~
   out_shape_cv2:
     - 576
     - 384
