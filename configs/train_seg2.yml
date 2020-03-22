@@ -30,7 +30,7 @@
       attention_type: ~ # scse
       decoder_use_batchnorm: True # inplace for InplaceABN
     fpn:
-      decoder_dropout: 0.5
+      decoder_dropout: 0.2
 
   opt_params:
     opt: Adam
