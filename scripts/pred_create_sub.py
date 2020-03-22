@@ -20,8 +20,7 @@ def main(config):
     gc.collect()
 
     exp = GeneralInferExperiment(config)
-    infer = Inference(exp.loaders["test"], models=exp.models,
-                      **config["infer_params"])
+    infer = Inference(exp.model, exp.loaders["test"], **config["infer_params"])
     out_df = infer.create_sub(sub=exp.sample_sub)
 
 
