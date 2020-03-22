@@ -17,7 +17,7 @@
 
   criterion_params:
     loss: ComboLossOnlyPos
-    ComboLoss:
+    ComboLossOnlyPos:
       weights:
         - 0
         - 1
