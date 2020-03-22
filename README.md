@@ -34,6 +34,7 @@ WIP
 
 ## Plan
 * MVP Cascade
+  * Each network only takes about 2.5 hours to train (with Google Colab P4) (5 min/epoch * 30 epochs)
   * ResNet34 + FPN w/ BCE
     * [Weights](https://drive.google.com/open?id=1ibc0aNyQxxNvPqix9CABAKAAH5p6iL4d) [`0.60813 Public`/ `0.60287 Private LB`]
   * ResNet34 + FPN w/ pos-only soft dice loss
