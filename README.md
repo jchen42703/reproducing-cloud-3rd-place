@@ -33,23 +33,26 @@ WIP
 ```
 
 ## Plan
-* MVP Cascade [`0.652 Public LB`]
-  * ResNet34 + FPN w/ BCE [`0.608 Public LB`]
-    * [Weights](https://drive.google.com/open?id=1ibc0aNyQxxNvPqix9CABAKAAH5p6iL4d) [`0.602 Public`/ `0.608 Private LB`]
+* MVP Cascade
+  * ResNet34 + FPN w/ BCE
+    * [Weights](https://drive.google.com/open?id=1ibc0aNyQxxNvPqix9CABAKAAH5p6iL4d) [`0.60813 Public`/ `0.60287 Private LB`]
   * ResNet34 + FPN w/ pos-only soft dice loss
+    * [Weights](https://drive.google.com/open?id=1sIYsZQAnfdyykArCvVEIR0VCOszMSJHw) [`0.34752 Public/ 0.35233 Private`]
+    * With cascade: [`0.65658 Public/ 0.65195 Private`]
+      * This is already better than my previous private LB of `0.650` (and that was with an ensemble of deeper models and TTA...)
+        * Goes to show how important keeping aspect ratio in your input images is.
   * Single Fold, no TTA, no classifier, no threshold adjustment (=0.5)
-  * This is already better than my previous ensemble of four models that achieved `~0.660 Public LB`
-    * And those were with TTA and a classifier!
   * Parameter Summary:
   ```
   Network: Resnet34-FPN
   Image size: 384x576
   Batch size: 16
   Optimizer: Adam
-  Scheduler: reduceLR for seg1, warmRestart for seg2.
+  Scheduler: warmRestart for seg1, warmRestart for seg2.
   Augmentations: H/V flip, ShiftScalerRotate and GridDistortion
   TTA: raw, Horizontal Flip, Vertical Flip
   ```
+
   * Results:
   ```
   1-fold: 0.664
