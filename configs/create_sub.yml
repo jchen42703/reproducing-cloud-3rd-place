@@ -11,9 +11,9 @@
       - resnet34
     decoders:
       - FPN
-    Unet:
-      attention_type: ~ # scse
-      decoder_use_batchnorm: True # inplace for InplaceABN
+    # Unet:
+    #   attention_type: ~ # scse
+    #   decoder_use_batchnorm: True # inplace for InplaceABN
     FPN:
       decoder_dropout: 0.2
 
@@ -21,8 +21,8 @@
     - fpn_resnet34_seg1_seed350_mvp_best.pth
 
   infer_params:
-    tta_flips: #~
-      - lr_flip
+    # tta_flips: #~
+    #   - lr_flip
       # - ud_flip
       # - lrud_flip
     class_params:
