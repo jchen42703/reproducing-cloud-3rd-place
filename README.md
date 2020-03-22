@@ -8,9 +8,29 @@ This repository is just me practicing seeing if I can match whatever the solutio
 ### Preprocessing
 Assuming that you've already downloaded the dataset from Kaggle:
 ```
-!python /content/reproducing-cloud/scripts/create_resized_dset.py  --yml_path="/content/understanding-clouds-kaggle/configs/create_dset.yml"
+python /content/reproducing-cloud-3rd-place/scripts/create_resized_dset.py  --yml_path="/content/understanding-clouds-kaggle/configs/create_dset.yml"
 ```
 Feel free to change the parameters in the .yml file (such as the image sizes).
+### Training
+For stage 1:
+```
+python /content/reproducing-cloud-3rd-place/scripts/train_yaml.py --yml_path="train_seg1.yml"
+```
+For stage 2:
+```
+python /content/reproducing-cloud-3rd-place/scripts/train_yaml.py --yml_path="train_seg2.yml"
+```
+### Inference
+For stage 1 and 2's submission:
+```
+python /content/reproducing-cloud-3rd-place/scripts/pred_create_sub.py --yml_path="create_sub.yml"
+```
+Just make sure to specify the proper weights for each stage.
+
+To cascade:
+```
+WIP
+```
 
 ## Plan
 * MVP Cascade [`0.652 Public LB`]
