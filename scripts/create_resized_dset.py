@@ -13,7 +13,15 @@ def main(config):
         "masks_out": paths_params["masks_out"],
     }
 
-    train = pd.read_csv(paths_params["train_csv_path"])
+    if paths_params["train_csv_path"] is not None:
+        train = pd.read_csv(paths_params["train_csv_path"])
+    else:
+        assert paths_dict["masks_out"] is None, \
+            "If train_csv_path is not specified, then" + \
+            " the masks will not be preprocessed. Please set" + \
+            "`masks_out` in your config to ~ ."
+        train = None
+
     preprocessor = Preprocessor(train, paths_dict,
                                 tuple(config["out_shape_cv2"]))
     preprocessor.execute_all()
