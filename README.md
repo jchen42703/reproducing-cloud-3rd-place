@@ -15,6 +15,7 @@ Feel free to change the parameters in the .yml file (such as the image sizes).
 ## Plan
 * MVP Cascade [`0.652 Public LB`]
   * ResNet34 + FPN w/ BCE [`0.608 Public LB`]
+    * [Weights](https://drive.google.com/open?id=1ibc0aNyQxxNvPqix9CABAKAAH5p6iL4d) [`0.602 Public`/ `0.608 Private LB`]
   * ResNet34 + FPN w/ pos-only soft dice loss
   * Single Fold, no TTA, no classifier, no threshold adjustment (=0.5)
   * This is already better than my previous ensemble of four models that achieved `~0.660 Public LB`
