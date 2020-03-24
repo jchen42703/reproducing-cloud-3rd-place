@@ -1,6 +1,7 @@
 import cv2
 import tqdm
 import os
+from functools import partial
 
 from clouds.inference.utils import mask2rle, post_process, \
                                    apply_nonlin
@@ -13,7 +14,7 @@ class Inference(object):
         create_sub: Creates the submission file
         get_encoded_pixels: Gets the segmentation encoded pixels
     """
-    def __init__(self, model, test_loader, class_params=None):
+    def __init__(self, model, test_loader, tta_flips=None, class_params=None):
         """
         Args:
             model (torch.nn.Module): callable object that returns the
@@ -21,8 +22,8 @@ class Inference(object):
                 To ensemble, see `experiments.utils.load_checkpoints` and
                 `experiments.utils.EnsembleModel`.
             test_loader (torch.utils.data.DataLoader): Test loader
-            # tta_flips (list-like): consisting one of or all of
-            #     ["lr_flip", "ud_flip", "lrud_flip"]. Defaults to None.
+            tta_flips (list-like): consisting one of or all of
+                ["lr_flip", "ud_flip", "lrud_flip"]. Defaults to None.
             class_params (dict): of {class: {threshold, min_size}}
                 min_size is the minimum size a segmentation can be to be
                 considered as "correct"
@@ -37,6 +38,15 @@ class Inference(object):
         else:
             self.class_params = class_params
 
+        self.tta_fn = None
+        if tta_flips is not None:
+            assert isinstance(tta_flips, (list, tuple)), \
+                "tta_flips must be a list-like of strings."
+            print(f"TTA Ops: {tta_flips}")
+            self.tta_fn = partial(tta_flips_fn, model=self.model,
+                                  mode="segmentation", flips=tta_flips,
+                                  non_lin="sigmoid")
+
     def get_encoded_pixels(self):
         """
         Processes predicted logits and converts them to encoded pixels. Does
@@ -48,8 +58,11 @@ class Inference(object):
         """
         encoded_pixels = []
         image_id = 0
-        for i, test_x in enumerate(tqdm.tqdm(self.loader)):
-            pred_out = apply_nonlin(self.model(test_x.cuda()))
+        for test_x in tqdm.tqdm(self.loader):
+            if self.tta_fn is not None:
+                pred_out = self.tta_fn(batch=test_x.cuda())
+            else:
+                pred_out = apply_nonlin(self.model(test_x.cuda()))
             # for each batch (4, h, w): resize and post_process
             for i, batch in enumerate(pred_out):
                 for prob in batch:
