@@ -59,11 +59,51 @@ class InferExperimentsTests(unittest.TestCase):
 
     def test_Inference_create_sub(self):
         """Testing that Inference.create_sub() runs smoothly.
-
-        Not testing that it works properly.
         """
         # Seg only for now
         yml_path = "resources/configs/create_sub.yml"
+        experiment_config = load_config(yml_path)
+        exp = GeneralInferExperiment(experiment_config)
+
+        infer = Inference(exp.model, exp.loaders["test"],
+                          **experiment_config["infer_params"])
+        out_df = infer.create_sub(sub=exp.sample_sub)
+        print(out_df.head())
+        print(out_df["EncodedPixels"])
+        self.assertTrue(isinstance(out_df, pd.DataFrame))
+
+        # Test how well it actually performed
+        make_mask_kwargs = {
+            "img_name": self.img_names[0],
+            "out_shape_cv2": (525, 350),
+            "num_classes": 4
+        }
+        sub_df = pd.read_csv("submission.csv")
+        pred = make_mask(sub_df, shape=(350, 525),
+                         **make_mask_kwargs)
+        actual = make_mask(self.rle_df, shape=(1400, 2100),
+                           **make_mask_kwargs)
+        mean_dice = mean_dice_coef(actual[None], pred[None])
+
+        img_name = make_mask_kwargs["img_name"]
+        print(f"Mean Dice for {img_name}: {mean_dice}")
+        self.assertTrue(mean_dice > 0.5 and mean_dice < 0.9)
+
+        # visual prediction check
+        label_names = ["Fish", "Flower", "Gravel", "Sugar"]
+        for channel, label in zip(range(4), label_names):
+            fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 12))
+            ax1.imshow(actual[:, :, channel])
+            ax1.set_title(f"{label} Mask")
+            ax2.imshow(pred[:, :, channel])
+            ax2.set_title(f"{label} Prediction")
+            plt.show()
+
+    def test_Inference_create_sub_TTA(self):
+        """Testing that Inference.create_sub() runs smoothly with TTA.
+        """
+        # Seg only for now
+        yml_path = "resources/configs/create_sub_tta.yml"
         experiment_config = load_config(yml_path)
         exp = GeneralInferExperiment(experiment_config)
 
