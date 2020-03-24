@@ -1,0 +1,40 @@
+  sample_sub_csv_path: resources/sample_sub_testing.csv
+
+  io_params:
+    image_folder: train_576
+    batch_size: 16
+    num_workers: 0
+    aug_key: mvp
+
+  model_params:
+    encoders:
+      - resnet34
+    decoders:
+      - FPN
+    Unet:
+      attention_type: ~ # scse
+      decoder_use_batchnorm: True # inplace for InplaceABN
+    FPN:
+      decoder_dropout: 0.2
+
+  checkpoint_paths:
+    - fpn_resnet34_seg1_seed350_mvp_best.pth
+
+  infer_params:
+    tta_flips: #~
+      - lr_flip
+      - ud_flip
+      - lrud_flip
+    class_params:
+      0:
+        - 0.5
+        - 0
+      1:
+        - 0.5
+        - 0
+      2:
+        - 0.5
+        - 0
+      3:
+        - 0.5
+        - 0
