@@ -4,7 +4,7 @@ import os
 from functools import partial
 
 from clouds.inference.utils import mask2rle, post_process, \
-                                   apply_nonlin
+                                   apply_nonlin, tta_flips_fn
 
 
 class Inference(object):
