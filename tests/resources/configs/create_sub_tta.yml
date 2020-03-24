@@ -23,8 +23,8 @@
   infer_params:
     tta_flips: #~
       - lr_flip
-      - ud_flip
-      - lrud_flip
+      # - ud_flip
+      # - lrud_flip
     class_params:
       0:
         - 0.5
