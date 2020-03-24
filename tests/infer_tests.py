@@ -87,7 +87,6 @@ class InferExperimentsTests(unittest.TestCase):
 
         img_name = make_mask_kwargs["img_name"]
         print(f"Mean Dice for {img_name}: {mean_dice}")
-        self.assertTrue(mean_dice > 0.5 and mean_dice < 0.9)
 
         # visual prediction check
         label_names = ["Fish", "Flower", "Gravel", "Sugar"]
@@ -98,6 +97,9 @@ class InferExperimentsTests(unittest.TestCase):
             ax2.imshow(pred[:, :, channel])
             ax2.set_title(f"{label} Prediction")
             plt.show()
+
+        # numerical check
+        self.assertTrue(mean_dice > 0.5 and mean_dice < 0.9)
 
     def test_Inference_create_sub_TTA(self):
         """Testing that Inference.create_sub() runs smoothly with TTA.
@@ -129,7 +131,6 @@ class InferExperimentsTests(unittest.TestCase):
 
         img_name = make_mask_kwargs["img_name"]
         print(f"Mean Dice for {img_name}: {mean_dice}")
-        self.assertTrue(mean_dice > 0.5 and mean_dice < 0.9)
 
         # visual prediction check
         label_names = ["Fish", "Flower", "Gravel", "Sugar"]
@@ -140,6 +141,9 @@ class InferExperimentsTests(unittest.TestCase):
             ax2.imshow(pred[:, :, channel])
             ax2.set_title(f"{label} Prediction")
             plt.show()
+
+        # numerical check
+        self.assertTrue(mean_dice > 0.5 and mean_dice < 0.9)
 
 
 def single_dice_coef(y_true, y_pred_bin):
