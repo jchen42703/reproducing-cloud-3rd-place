@@ -35,7 +35,11 @@ def download_sample_sub():
 def download_weights():
     """Downloads example weights for tests.
     """
-    weights_id = "1YMewsRkJoybsy4Qs05UJG_0ZvgL8pZg5"
+    # 0.346 dice on 00a0954.jpg
+    # weights_id = "1YMewsRkJoybsy4Qs05UJG_0ZvgL8pZg5"
+    # save_path = "./fpn_resnet34_seg1_seed350_mvp_best.pth"
+    # 0.71 dice on 00a0954.jpg
+    weights_id = "1ibc0aNyQxxNvPqix9CABAKAAH5p6iL4d"
     save_path = "./fpn_resnet34_seg1_seed350_mvp_best.pth"
     gdd.download_file_from_google_drive(file_id=weights_id,
                                         dest_path=save_path,
